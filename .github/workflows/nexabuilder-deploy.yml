@@ -83,7 +83,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ github.event.inputs.aws_region }}
 
       - name: Ensure ECR repository exists
         run: |
@@ -121,7 +121,10 @@ jobs:
             --services "$ECS_SERVICE" \
             --region "$AWS_REGION" \
             --query "services[0].taskDefinition" \
-            --output text)
+            --output text 2>/dev/null || true)
+          if [ -z "$CURRENT_TASK_DEF" ] || [ "$CURRENT_TASK_DEF" = "None" ]; then
+            CURRENT_TASK_DEF="$TASK_DEFINITION_FAMILY"
+          fi
           aws ecs describe-task-definition \
             --task-definition "$CURRENT_TASK_DEF" \
             --region "$AWS_REGION" \
